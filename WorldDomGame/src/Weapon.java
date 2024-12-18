@@ -7,7 +7,6 @@ public class Weapon {
         this.attackPower = attackPower;
     }
 
-    // Getters
     public String getName() {
         return name;
     }

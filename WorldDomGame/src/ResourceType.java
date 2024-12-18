@@ -4,9 +4,7 @@ public enum ResourceType {
     CRYSTAL(2), // Uncommon
     ENERGY(3), // Uncommon
     GEM(1), // Rare
-    STONE(6), // Common
-    // Add more resource types as needed
-    ;
+    STONE(6);
 
     private final int rarity;
 

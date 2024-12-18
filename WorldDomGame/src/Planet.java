@@ -65,7 +65,9 @@ public class Planet {
         return resources;
     }
 
-    // Getters and setters for the fields
+    public boolean isDestroyed() {
+        return health <= 0;
+    }
 
     public String getName() {
         return name;

@@ -1,4 +1,3 @@
-import java.awt.Graphics;
 import java.util.ArrayList;
 import java.util.Random;
 
@@ -23,6 +22,10 @@ public class SolarSystem {
         }
 
         return madePlanets;
+    }
+
+    public void removePlanet(Planet planet) {
+        planets.remove(planet);
     }
 
     public int size(){

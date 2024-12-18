@@ -1,9 +1,4 @@
 import javax.swing.JFrame;
-import java.awt.Graphics;
-import java.awt.Color;
-import java.awt.Font;
-import java.awt.event.KeyEvent;
-import java.awt.event.KeyListener;
 
 public class GameWindow extends JFrame {
 

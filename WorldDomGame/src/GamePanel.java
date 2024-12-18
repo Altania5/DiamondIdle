@@ -1,5 +1,6 @@
 import javax.swing.JPanel;
 import java.awt.Graphics;
+import java.awt.Image;
 import java.awt.Color;
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -17,62 +18,79 @@ public class GamePanel extends JPanel implements Runnable {
     public Planet selectedPlanet;
     private Hud hud;
     private Player player;
-
+    private Inventory inventory;
 
     public GamePanel(GameWindow gameWindow) {
         this.gameWindow = gameWindow;
+        inventory = new Inventory(player);
         setFocusable(true);
         requestFocus();
 
+        player = new Player("Conqueror", this);
+
+        if (!player.getWeapons().isEmpty()) {
+            player.setSelectedWeapon(player.getWeapons().get(0));
+        }
+
+        inventory = new Inventory(player);
+        add(inventory);
+
         addMouseListener(new MouseAdapter() {
-            @Override
-            public void mouseClicked(MouseEvent e) {
-                int mouseX = e.getX();
-                int mouseY = e.getY();
 
-                for (Planet p : solarSystem.getPlanets()) {
-                    int imageX = (getWidth() - p.getImage().getWidth(null)) / 2;
-                    int imageY = (getHeight() - p.getImage().getHeight(null)) / 2;
+        @Override
+        public void mouseClicked(MouseEvent e) {
+            int mouseX = e.getX();
+            int mouseY = e.getY();
+            selectedPlanet = null;  // Reset selectedPlanet *before* checking for clicks
 
-
+            for (Planet p : solarSystem.getPlanets()) {
+                Image planetImage = p.getImage();
+                if (planetImage != null) {
+                    int imageX = (getWidth() - planetImage.getWidth(null)) / 2;
+                    int centerY = (70 + getHeight() - 200) / 2 - (planetImage.getHeight(null) / 2);  // Use the correct centerY
+        
                     int planetLeft = imageX;
-                    int planetRight = imageX + p.getImage().getWidth(null);
-                    int planetTop = imageY;
-                    int planetBottom = imageY + p.getImage().getHeight(null);
-                    
-
+                    int planetRight = imageX + planetImage.getWidth(null);
+                    int planetTop = centerY;           // Use centerY for top
+                    int planetBottom = centerY + planetImage.getHeight(null); // Use centerY for bottom
+        
+        
                     if (mouseX >= planetLeft && mouseX <= planetRight &&
                             mouseY >= planetTop && mouseY <= planetBottom) {
-                        selectedPlanet = p; // Set selectedPlanet in GamePanel
-                        hud.setSelectedPlanet(p); // Update the HUD's selectedPlanet
-                        System.out.println("Clicked on " + p.getName());
-
-                        if (selectedPlanet != null && selectedPlanet.getHealth() > 0) {
-                            int damage = player.getAttackPower();
-                            if (player.getSelectedWeapon() != null) {
-                                damage += player.getSelectedWeapon().getAttackPower();
-                            }
-                            player.attackPlanet(selectedPlanet, damage);
-                            System.out.println("Planet health " + selectedPlanet.getName() + ": " + selectedPlanet.getHealth());
-                            hud.repaint(); // Repaint the Hud to show changes
-                        }
-                        break; // Important: exit after finding clicked Planet
+                        selectedPlanet = p;
+                        hud.setSelectedPlanet(p);
+                        break; // Exit loop after finding clicked planet
                     }
+        
+                } else {
+                   System.err.println("Image for planet " + p.getName() + " not loaded.");
                 }
-
-                if (selectedPlanet == null) { // No planet clicked 
-                    // Check if the click was on the inventory button
-                    if (e.getX() >= 5 && e.getX() <= 60 && e.getY() >= 5 && e.getY() <= 25) {
-                        hud.setShowInventory(!hud.isShowInventory()); // Use getter and setter
-                        hud.repaint(); 
-                    }
-                }
-
-
             }
-        });
 
-        addKeyListener(new KeyListener() {
+
+                if (selectedPlanet != null && selectedPlanet.getHealth() > 0) { // Check AFTER loop
+                    int damage = player.getAttackPower();
+                    if (player.getSelectedWeapon() != null) {
+                        damage += player.getSelectedWeapon().getAttackPower();
+                    }
+                    player.attackPlanet(selectedPlanet, damage);
+                    if (selectedPlanet.isDestroyed()) {
+                        solarSystem.removePlanet(selectedPlanet);
+                        selectedPlanet = null;
+                        hud.setSelectedPlanet(null); 
+                    }
+                    hud.repaint(); 
+                    } else { // No planet clicked
+                        //Check if inventory button was clicked
+                        if (e.getX() >= 5 && e.getX() <= 60 && e.getY() >= 5 && e.getY() <= 25) {
+                            hud.setShowInventory(!hud.isShowInventory());
+                            hud.repaint(); 
+                        }
+                    }
+                }
+            });
+
+            addKeyListener(new KeyListener() {
             @Override
             public void keyTyped(KeyEvent e) {
                 char keyChar = e.getKeyChar();
@@ -87,6 +105,11 @@ public class GamePanel extends JPanel implements Runnable {
                 if (e.getKeyCode() == KeyEvent.VK_ENTER && gameWindow.getCurrentState() == GameWindow.GameState.TITLE) {
                     gameWindow.updateGameState(GameWindow.GameState.GAME);
                 }
+
+                if (e.getKeyCode() == KeyEvent.VK_I) {
+                    inventory.setVisible(!inventory.isVisible());
+                    repaint();
+                }
             }
 
             @Override
@@ -95,37 +118,32 @@ public class GamePanel extends JPanel implements Runnable {
             }
         });
 
-        player = new Player("Conqueror", this);
+        Weapon drill = new Weapon("Drill", 1);
 
-        if (!player.getWeapons().isEmpty()) {
-            player.setSelectedWeapon(player.getWeapons().get(0));
-        }
+        player.acquireWeapon(drill);
 
-        Weapon laser = new Weapon("Laser", 10);
-        player.acquireWeapon(laser);
-
-        player.setSelectedWeapon(laser);
+        player.setSelectedWeapon(drill);
 
         hud = new Hud(this, player);
         hud.setBounds(0, 0, 700, 500); // Set the bounds to cover the entire GamePanel
         add(hud);
 
-        Planet murcury = new Planet("Mercury");
-        Planet venus = new Planet("Venus");
-        Planet earth = new Planet("Earth", "res/planets/2211302432.png", new ArrayList<>(Arrays.asList(ResourceType.ORE, ResourceType.GAS, ResourceType.STONE)));
-        Planet mars = new Planet("Mars");
+        Planet earth = new Planet("Earth", "WorldDomGame\\res\\planets\\2211302432.png", new ArrayList<>(Arrays.asList(ResourceType.ORE, ResourceType.GAS, ResourceType.STONE))); // Changed image path
+        Planet murcury = new Planet("Mercury", "WorldDomGame\\res\\planets\\2211302432 (1).png", new ArrayList<>(Arrays.asList(ResourceType.ORE, ResourceType.GAS, ResourceType.STONE)));
+        Planet venus = new Planet("Venus", "WorldDomGame\\res\\planets\\2211302432 (2).png", new ArrayList<>(Arrays.asList(ResourceType.ORE, ResourceType.GAS, ResourceType.STONE)));
+        Planet mars = new Planet("Mars", "WorldDomGame\\res\\planets\\2211302432 (1).png", new ArrayList<>(Arrays.asList(ResourceType.ORE, ResourceType.GAS, ResourceType.STONE)));
 
         milkyWay = new SolarSystem("Milky Way");
         milkyWay.clear();
+        milkyWay.addPlanet(earth);
         milkyWay.addPlanet(murcury);
         milkyWay.addPlanet(venus);
-        milkyWay.addPlanet(earth);
         milkyWay.addPlanet(mars);
 
         this.solarSystem = milkyWay;
+        milkyWay.setCurrentPlanet(1);
         this.selectedPlanet = milkyWay.getSelectedPlanet();
         hud.setSelectedPlanet(selectedPlanet);
-
         startGame();
     }
 
@@ -177,7 +195,7 @@ public class GamePanel extends JPanel implements Runnable {
     }
 
     private void updateGame() {
-        // Update game logic here
+
     }
 
     @Override
@@ -185,14 +203,28 @@ public class GamePanel extends JPanel implements Runnable {
         super.paintComponent(g);
         if (gameWindow.getCurrentState() == GameWindow.GameState.TITLE) {
             drawTitleScreen(g);
-        } else if (gameWindow.getCurrentState() == GameWindow.GameState.GAME) {
-            // Draw game elements here
+        }
+
+        if (gameWindow.getCurrentState() == GameWindow.GameState.GAME) {
             for (Planet p : solarSystem.getPlanets()) {
-                int imageX = (getWidth() - p.getImage().getWidth(null)) / 2;
-                int imageY = (getHeight() - p.getImage().getHeight(null)) / 2;
-                g.drawImage(p.getImage(), imageX, imageY, this);
-            }
+                Image planetImage = p.getImage();
+                if (planetImage != null) {
+                    int imageX = (getWidth() - planetImage.getWidth(null)) / 2;
+    
+                    // Calculate the center position between the HUD bars
+                    int centerY = (70 + getHeight() - 200) / 2 - (planetImage.getHeight(null) / 2); 
+                                                                //70 offset is top bar and 200 offset is bottom bar
+    
+                    g.drawImage(planetImage, imageX, centerY, this);
+                } else {
+                    System.err.println("Image not loaded for planet: " + p.getName());
+                }
             hud.paintComponent(g);
+            }
+        }
+
+        if (inventory.isVisible()) {
+            inventory.paintComponent(g);
         }
     }
 

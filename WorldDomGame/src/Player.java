@@ -4,6 +4,7 @@ import java.util.Map;
 
 public class Player {
     private String name;
+    private Objective currentObjective;
     private int attackPower;
     private ArrayList<Weapon> weapons;
     private Weapon selectedWeapon; // Add a selectedWeapon field
@@ -12,14 +13,22 @@ public class Player {
 
     public Player(String name, GamePanel gamePanel) {
         this.name = name;
-        this.attackPower = 10; // Base attack power
+        this.currentObjective = new Objective("Gain enough resources to build the Space Station.");
+        this.attackPower = 0; // Base attack power
         this.resources = new HashMap<>();
         this.rareResources = new HashMap<>();
         this.weapons = new ArrayList<>();
         this.selectedWeapon = null; // Initialize selectedWeapon to null
     }
 
-    // Getters and Setters
+    public Objective getCurrentObjective() {
+        return currentObjective;
+    }
+
+    public void setCurrentObjective(Objective currentObjective) {
+        this.currentObjective = currentObjective;
+    }
+
     public String getName() {
         return name;
     }
