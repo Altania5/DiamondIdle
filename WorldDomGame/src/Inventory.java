@@ -1,19 +1,29 @@
 import javax.swing.*;
 import java.awt.*;
+import java.awt.geom.Ellipse2D;
 import java.awt.geom.RoundRectangle2D;
 
 public class Inventory extends JPanel {
 
     private Player player;
-    private int x, y;  // Position of the inventory
+    private int x, y;
     private int width = 300;
     private int height;
     private int arcRadius = 10;
-    private boolean visible = false; // Initially hidden
+    private boolean visible = false;
+    private int rows = 3;
+    private int columns = 13;
+    private int padding = 10; 
+    public ItemStack[][] inventoryGrid = new ItemStack[rows][columns]; // Example: 9x4 grid
 
-    public Inventory(Player player) {
-        this.player = player;
-        setOpaque(false); // Make the panel transparent so it doesn't cover the game
+
+    public Inventory() {
+        setOpaque(false);
+    }
+
+    public void updateInventory(Player player) {
+        this.player = player; // Ensure the inventory has the latest player data
+        repaint(); // Trigger a repaint to reflect the updated inventory
     }
 
     public void setVisible(boolean visible) {
@@ -24,6 +34,9 @@ public class Inventory extends JPanel {
         return visible;
     }
 
+    public ItemStack[][] getInventoryGrid() {
+        return inventoryGrid;
+    }
 
     @Override
     protected void paintComponent(Graphics g) {
@@ -36,62 +49,85 @@ public class Inventory extends JPanel {
         Graphics2D g2d = (Graphics2D) g;
         g2d.setRenderingHint(RenderingHints.KEY_ANTIALIASING, RenderingHints.VALUE_ANTIALIAS_ON);
 
-        // Calculate height dynamically
-        int resourceRows = ResourceType.values().length;
-        int weaponRows = player.getWeapons().size() + 1; // Add one for title
-        int totalRows = resourceRows + weaponRows + 3; // Resources, weapons, titles, and spacing
-        height = totalRows * 20 + 40; // Calculate total height based on rows
+        // Get parent dimensions
+        int parentWidth = getParent().getWidth();
+        int parentHeight = getParent().getHeight();
 
-        x = (getParent().getWidth() - width) - 20; // 20px padding from right
-        y = (70 + getParent().getHeight() - 200) / 2 - height / 2;
+        // Inventory background panel
+        int panelWidth = parentWidth;
+        int panelHeight = parentHeight / 3;
+        int x = 0;
+        int y = parentHeight - panelHeight;
 
-        // Draw rounded rectangle for inventory background
-        g2d.setColor(new Color(0x202020)); // Slightly darker background
-        RoundRectangle2D roundedRectangle = new RoundRectangle2D.Float(x, y, width, height, arcRadius, arcRadius);
+        g2d.setColor(new Color(0x202020));
+        RoundRectangle2D roundedRectangle = new RoundRectangle2D.Float(x, y, panelWidth, panelHeight, arcRadius, arcRadius);
         g2d.fill(roundedRectangle);
         g2d.setColor(Color.WHITE);
         g2d.draw(roundedRectangle);
 
-        g2d.setColor(Color.WHITE);
-        g2d.setFont(new Font("Arial", Font.BOLD, 16));
+        // Calculate cell dimensions and padding
+        int totalPaddingWidth = (columns + 1) * padding;
+        int totalPaddingHeight = (rows + 1) * padding;
 
-        int currentY = y + 25; // Start drawing inside the panel with padding
+        int availableWidth = panelWidth - totalPaddingWidth;
+        int availableHeight = panelHeight - totalPaddingHeight;
 
-        // Draw Title
-        drawCenteredString(g2d, "Inventory",  currentY);
-        currentY += 25;
+        // Determine the size of the square cell
+        int cellSide = Math.min(availableWidth / columns, availableHeight / rows);
 
-        // Draw Resources
-        drawCenteredString(g2d, "Resources:", currentY);
-        currentY += 20;
-        for (ResourceType resourceType : ResourceType.values()) {
-            int amount = player.getResources().getOrDefault(resourceType, 0);
-            drawCenteredString(g2d, resourceType.name() + ": " + amount, currentY);
-            currentY += 20;
-        }
-        currentY += 10; // Add some spacing
+        // Calculate cell positions
+        for (int row = 0; row < rows; row++) {
+            for (int col = 0; col < columns; col++) {
+                // Calculate cell position with padding
+                int cellX = x + padding + col * (cellSide + padding);
+                int cellY = y + padding + row * (cellSide + padding);
 
-        // Draw Weapons
-        drawCenteredString(g2d,"Weapons:", currentY);
-        currentY += 20;
-        for (Weapon weapon : player.getWeapons()) {
-            String weaponName = weapon.getName();
+                // Draw the square cell
+                g2d.setColor(new Color(0x404040));
+                g2d.fillRect(cellX, cellY, cellSide, cellSide);
 
-            if (weapon == player.getSelectedWeapon()) {
-                g2d.setColor(Color.YELLOW); // Highlight selected weapon
-                drawCenteredString(g2d, weaponName, currentY); // Draw again in yellow
-                g2d.setColor(Color.WHITE); // Reset color
-            } else {
-                drawCenteredString(g2d, weaponName, currentY);
+                ItemStack item = inventoryGrid[row][col];
+                if (item != null) {
+                    // Draw the item circle
+                    int circleDiameter = Math.max(0, cellSide - 2 * padding);
+                    int circleX = cellX + (cellSide - circleDiameter) / 2;
+                    int circleY = cellY + (cellSide - circleDiameter) / 2;
+
+                    g2d.setColor(getItemColor(item.type));
+                    g2d.fillOval(circleX, circleY, circleDiameter, circleDiameter);
+
+                    // Center the text
+                    g2d.setColor(Color.WHITE);
+                    String quantityText = String.valueOf(item.quantity);
+                    FontMetrics fm = g2d.getFontMetrics();
+                    int textWidth = fm.stringWidth(quantityText);
+                    int textHeight = fm.getHeight();
+                    int textX = cellX + (cellSide - textWidth) / 2;
+                    int textY = cellY + cellSide - (textHeight / 2) - fm.getDescent();
+
+                    g2d.drawString(quantityText, textX, textY);
+                }
             }
-            currentY += 20;
         }
     }
 
-    private void drawCenteredString(Graphics2D g, String text, int y) {
-        FontMetrics fm = g.getFontMetrics();
-        int textWidth = fm.stringWidth(text);
-        int centeredX = x + (width - textWidth) / 2;
-        g.drawString(text, centeredX, y);
+    //Helper to give color to the circle.
+    private Color getItemColor(ResourceType type) {
+        // Assign colors based on resource type as needed
+        switch (type) {
+            case ORE:
+                return Color.GRAY;
+            case GAS:
+                return Color.CYAN;
+            case CRYSTAL:
+                return Color.MAGENTA;
+            case ENERGY:
+                return Color.YELLOW;
+            case GEM:
+                return Color.GREEN;
+            case STONE:
+            default:
+                return Color.LIGHT_GRAY;
+        }
     }
 }

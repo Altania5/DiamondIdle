@@ -3,22 +3,24 @@ import java.util.HashMap;
 import java.util.Map;
 
 public class Player {
+    private Inventory inventory;
     private String name;
     private Objective currentObjective;
     private int attackPower;
     private ArrayList<Weapon> weapons;
-    private Weapon selectedWeapon; // Add a selectedWeapon field
+    private Weapon selectedWeapon;
     private Map<ResourceType, Integer> resources;
     private Map<ResourceType, Integer> rareResources = new HashMap<>();
 
-    public Player(String name, GamePanel gamePanel) {
+    public Player(String name, GamePanel gamePanel, Inventory inventory) {
         this.name = name;
         this.currentObjective = new Objective("Gain enough resources to build the Space Station.");
-        this.attackPower = 0; // Base attack power
+        this.attackPower = 0;
         this.resources = new HashMap<>();
         this.rareResources = new HashMap<>();
         this.weapons = new ArrayList<>();
-        this.selectedWeapon = null; // Initialize selectedWeapon to null
+        this.selectedWeapon = null;
+        this.inventory = inventory;
     }
 
     public Objective getCurrentObjective() {
@@ -53,17 +55,41 @@ public class Player {
         this.selectedWeapon = weapon;
     }
 
-    // Methods for interacting with planets
     public void attackPlanet(Planet planet, int damage) {
         planet.damage(damage, this);
         System.out.println(name + " attacked " + planet.getName() + " for " + damage + " damage.");
     }
 
-
-    // Methods for managing resources
     public void gainResources(ResourceType resourceType, int amount) {
-        resources.put(resourceType, resources.getOrDefault(resourceType, 0) + amount);
-        System.out.println(name + " gained " + amount + " " + resourceType.name() + ".");
+        ItemStack[][] inventoryGrid = inventory.getInventoryGrid();
+
+        for (int row = 0; row < inventoryGrid.length; row++) {
+            for (int col = 0; col < inventoryGrid[row].length; col++) {
+                if (inventory.inventoryGrid[row][col] != null && inventory.inventoryGrid[row][col].type == resourceType && inventory.inventoryGrid[row][col].quantity < 999) {
+                    int spaceAvailable = 999 - inventory.inventoryGrid[row][col].quantity;
+                    int amountToAdd = Math.min(amount, spaceAvailable);
+                    inventory.inventoryGrid[row][col].quantity += amountToAdd;
+                    amount -= amountToAdd;
+                    if (amount == 0) return; // All resources added
+                }
+            }
+        }
+    
+        // If we get here, no existing stack or all stacks are full
+        for (int row = 0; row < inventoryGrid.length; row++) {
+            for (int col = 0; col < inventoryGrid[row].length; col++) {
+                if (inventory.inventoryGrid[row][col] == null) {
+                    inventory.inventoryGrid[row][col] = new ItemStack(resourceType, Math.min(amount, 999));
+                    amount -= Math.min(amount, 999);
+                    if (amount == 0) return;
+                }
+            }
+        }
+        inventory.updateInventory(this);
+    }
+
+    public Inventory getInventory() {
+        return inventory;
     }
 
     public void gainRareResources(ResourceType resourceType, int amount) {
@@ -89,7 +115,6 @@ public class Player {
         }
     }
 
-    // Methods for managing weapons
     public void acquireWeapon(Weapon weapon) {
         weapons.add(weapon);
         System.out.println(name + " acquired a " + weapon.getName() + ".");

@@ -15,7 +15,7 @@ public class SolarSystem {
     private ArrayList<Planet> generatePlanets() {
         Random random = new Random();
         ArrayList<Planet> madePlanets = new ArrayList<>();
-        int numberOfPlanets = 1 + random.nextInt(10); // Random number between 1 and 10
+        int numberOfPlanets = 1 + random.nextInt(10);
 
         for (int i = 0; i < numberOfPlanets; i++) {
             madePlanets.add(new Planet("Planet " + (i + 1)));
@@ -56,5 +56,4 @@ public class SolarSystem {
         return selectedPlanet = planets.get(x - 1);
         
     }
-
 }

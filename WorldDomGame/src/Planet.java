@@ -11,8 +11,8 @@ public class Planet {
     private boolean isSelected;
     private Image image;
     private int health;
-    private List<ResourceType> requiredResourcesToDrop; // List of resources to drop before 50% health
-    private boolean resourcesDropped = false; // Flag to track if resources have been dropped
+    private List<ResourceType> requiredResourcesToDrop;
+    private boolean resourcesDropped = false;
 
     public Planet(String name, String imagePath, List<ResourceType> requiredResourcesToDrop) {
         this.name = name;
@@ -43,7 +43,6 @@ public class Planet {
             File[] listOfFiles = folder.listFiles();
             Random random = new Random();
             if (listOfFiles != null && listOfFiles.length > 0) {
-                // Randomly select a file
                 File file = listOfFiles[random.nextInt(listOfFiles.length)];
                 return ImageIO.read(file);
             }
@@ -56,7 +55,7 @@ public class Planet {
     private List<ResourceType> generateRequiredResources() {
         List<ResourceType> resources = new ArrayList<>();
         Random random = new Random();
-        int numResources = 1 + random.nextInt(3); // Random number of resources between 1 and 3
+        int numResources = 1 + random.nextInt(3);
 
         for (int i = 0; i < numResources; i++) {
             resources.add(ResourceType.values()[random.nextInt(ResourceType.values().length)]);
@@ -96,32 +95,29 @@ public class Planet {
     public void damage(int x, Player player){
         health -= x;
 
-        // Drop resources based on health
         dropResources(player);
     }
 
     private void dropResources(Player player) {
         Random random = new Random();
-        if (random.nextInt(100) < 75) { // 50% chance to drop resources
-            resourcesDropped = true; // Set flag to prevent further drops
-            int numResources = 1 + random.nextInt(3); // Drop between 1 and 3 resources
+        if (random.nextInt(100) < 75) {
+            resourcesDropped = true;
+            int numResources = 1 + random.nextInt(3);
             for (int i = 0; i < numResources; i++) {
                 ResourceType resourceType = getRandomResourceType(random);
                 System.out.println(name + " dropped " + resourceType.name() + ".");
-                player.gainResources(resourceType, 1); // Add 1 of the resource type to the player's inventory
+                player.gainResources(resourceType, 1);
             }
         }
     }
 
     private ResourceType getRandomResourceType(Random random) {
-        // Calculate drop probabilities based on rarity
         int totalRarity = 0;
         for (ResourceType type : ResourceType.values()) {
             totalRarity += type.getRarity();
         }
     
-        int randomValue = random.nextInt(totalRarity) + 1; // Generate a random value within the total rarity range
-    
+        int randomValue = random.nextInt(totalRarity) + 1;
         int currentRarity = 0;
         for (ResourceType type : ResourceType.values()) {
             currentRarity += type.getRarity();
@@ -129,8 +125,6 @@ public class Planet {
                 return type;
             }
         }
-        // If no resource is selected, return a default resource (e.g., ORE)
         return ResourceType.STONE;
     }
-    // Other methods as needed
 }

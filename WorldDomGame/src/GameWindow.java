@@ -4,7 +4,6 @@ public class GameWindow extends JFrame {
 
     private GamePanel gamePanel;
     private GameState currentState;
-
     public static int WIDTH = 800;
     public static int HEIGHT = 600;
 
@@ -17,25 +16,23 @@ public class GameWindow extends JFrame {
         setTitle("Galactic Conqueror");
         setSize(WIDTH, HEIGHT);
         setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
-        setLocationRelativeTo(null); // Center the JFrame on the screen
-        setResizable(false); // Prevent the JFrame from being resized
-        requestFocus(); // Request focus to the JFrame
-        setVisible(true); // Make the JFrame visible
+        setLocationRelativeTo(null);
+        setResizable(false);
+        requestFocus();
+        setVisible(true);
 
         gamePanel = new GamePanel(this);
-        add(gamePanel); // Add the game panel to the JFrame
+        add(gamePanel);
 
-        setCurrentState(GameState.TITLE); // Start in the title state
+        setCurrentState(GameState.TITLE);
     }
 
     public GameState getCurrentState() {
         return currentState;
-        
     }
 
     public void setCurrentState(GameState currentState) {
         this.currentState = currentState;
-        
     }
 
     public int getWidth() {
@@ -48,7 +45,7 @@ public class GameWindow extends JFrame {
 
     public void updateGameState(GameState newState) {
         setCurrentState(newState);
-        repaint(); // Repaint to reflect the state change
+        repaint();
     }
 
     public static void main(String[] args) {

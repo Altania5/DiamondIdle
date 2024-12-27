@@ -1,9 +1,9 @@
 public enum ResourceType {
-    ORE(2), // Common
-    GAS(3), // Common
-    CRYSTAL(2), // Uncommon
-    ENERGY(3), // Uncommon
-    GEM(1), // Rare
+    ORE(2),
+    GAS(3),
+    CRYSTAL(2),
+    ENERGY(3),
+    GEM(1),
     STONE(6);
 
     private final int rarity;

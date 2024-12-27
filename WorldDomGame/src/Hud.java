@@ -7,7 +7,7 @@ public class Hud extends JPanel {
     private Planet selectedPlanet;
     private Player player;
     private GamePanel gamePanel;
-    public boolean showInventory = false; // Flag to control inventory visibility
+    public boolean showInventory = false;
 
     public Hud(GamePanel gamePanel, Player player) {
         super();
@@ -38,31 +38,29 @@ public class Hud extends JPanel {
         g2d.setColor(Color.DARK_GRAY);
         g2d.fillRect(0, 50, gamePanel.getWidth(), 2);
 
-        // Notification Panel (Objective)
         String objectiveText = "Objective: " + player.getCurrentObjective().getDescription();
 
-        // Create a temporary BufferedImage to get accurate FontMetrics
         BufferedImage img = new BufferedImage(1, 1, BufferedImage.TYPE_INT_ARGB);
         Graphics2D g2 = img.createGraphics();
         FontMetrics fm = g2.getFontMetrics(new Font("Arial", Font.BOLD, 14)); 
         g2.dispose(); 
 
-        int objectiveWidth = fm.stringWidth(objectiveText) + 20; // Add padding
+        int objectiveWidth = fm.stringWidth(objectiveText) + 20;
         int objectiveHeight = fm.getHeight() + 10;
-        int arcRadius = 10; // Corner radius
-        int x = gamePanel.getWidth() - objectiveWidth - 20; // Position from right edge
+        int arcRadius = 10;
+        int x = gamePanel.getWidth() - objectiveWidth - 20;
         int y = 20;
 
-        g2d.setColor(new Color(0x202020)); // Dark background
+        g2d.setColor(new Color(0x202020));
         RoundRectangle2D objectiveRect = new RoundRectangle2D.Float(x, y, objectiveWidth, objectiveHeight, arcRadius, arcRadius);
         g2d.fill(objectiveRect);
 
-        g2d.setColor(Color.WHITE); // Border
+        g2d.setColor(Color.WHITE);
         g2d.draw(objectiveRect);
 
         g.setColor(Color.WHITE);
         g.setFont(new Font("Arial", Font.BOLD, 14));
-        g.drawString(objectiveText, x + 10, y + fm.getAscent() + 5); // Draw text inside the panel
+        g.drawString(objectiveText, x + 10, y + fm.getAscent() + 5);
 
         g2d.setColor(Color.DARK_GRAY);
         g2d.fillRect(0, gamePanel.getHeight() - 200, gamePanel.getWidth(), 2);
