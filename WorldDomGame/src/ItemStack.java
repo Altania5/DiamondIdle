@@ -1,9 +1,14 @@
 public class ItemStack {
-    public ResourceType type;
+    public Item item; // Now stores an Item object
     public int quantity;
 
-    public ItemStack(ResourceType type, int quantity) {
-        this.type = type;
+    public ItemStack(Item item, int quantity) {
+        this.item = item;
         this.quantity = quantity;
+    }
+
+    //add getter for the item.
+    public Item getItem() {
+        return this.item;
     }
 }

@@ -62,15 +62,18 @@ public class Player {
 
     public void gainResources(ResourceType resourceType, int amount) {
         ItemStack[][] inventoryGrid = inventory.getInventoryGrid();
-
+    
         for (int row = 0; row < inventoryGrid.length; row++) {
             for (int col = 0; col < inventoryGrid[row].length; col++) {
-                if (inventory.inventoryGrid[row][col] != null && inventory.inventoryGrid[row][col].type == resourceType && inventory.inventoryGrid[row][col].quantity < 999) {
-                    int spaceAvailable = 999 - inventory.inventoryGrid[row][col].quantity;
+                if (inventoryGrid[row][col] != null && inventoryGrid[row][col].getItem() instanceof Resource && ((Resource) inventoryGrid[row][col].getItem()).getResourceType() == resourceType) {
+                    int spaceAvailable = 999 - inventoryGrid[row][col].quantity;
                     int amountToAdd = Math.min(amount, spaceAvailable);
-                    inventory.inventoryGrid[row][col].quantity += amountToAdd;
+                    inventoryGrid[row][col].quantity += amountToAdd;
                     amount -= amountToAdd;
-                    if (amount == 0) return; // All resources added
+                    if (amount == 0) {
+                        inventory.repaint(); // Repaint when changes occur.
+                        return; // All resources added
+                    }
                 }
             }
         }
@@ -78,14 +81,18 @@ public class Player {
         // If we get here, no existing stack or all stacks are full
         for (int row = 0; row < inventoryGrid.length; row++) {
             for (int col = 0; col < inventoryGrid[row].length; col++) {
-                if (inventory.inventoryGrid[row][col] == null) {
-                    inventory.inventoryGrid[row][col] = new ItemStack(resourceType, Math.min(amount, 999));
+                if (inventoryGrid[row][col] == null) {
+                    Resource resource = new Resource(resourceType); // Create Resource object
+                    inventoryGrid[row][col] = new ItemStack(resource, Math.min(amount, 999)); // Use resource in ItemStack constructor
                     amount -= Math.min(amount, 999);
-                    if (amount == 0) return;
+                    if (amount == 0) {
+                        inventory.repaint(); // Repaint when changes occur.
+                        return;
+                    }
                 }
             }
         }
-        inventory.updateInventory(this);
+            inventory.updateInventory(this); //Call repaint inside updateInventory().
     }
 
     public Inventory getInventory() {
@@ -117,6 +124,7 @@ public class Player {
 
     public void acquireWeapon(Weapon weapon) {
         weapons.add(weapon);
+        inventory.updateInventory(this); //Update the inventory here
         System.out.println(name + " acquired a " + weapon.getName() + ".");
     }
 

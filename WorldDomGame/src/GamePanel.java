@@ -18,19 +18,13 @@ public class GamePanel extends JPanel implements Runnable {
     private Hud hud;
     private Player player;
     private Inventory inventory;
+    private boolean showFPS = true;
+    private int fps = 0;
 
     public GamePanel(GameWindow gameWindow) {
         this.gameWindow = gameWindow;
         setFocusable(true);
         requestFocus();
-
-        inventory = new Inventory();
-        player = new Player("Conqueror", this, inventory);
-        add(inventory);
-
-        if (!player.getWeapons().isEmpty()) {
-            player.setSelectedWeapon(player.getWeapons().get(0));
-        }
 
         addMouseListener(new MouseAdapter() {
 
@@ -61,24 +55,19 @@ public class GamePanel extends JPanel implements Runnable {
                 }
             }
                 if (selectedPlanet != null && selectedPlanet.getHealth() > 0) {
-                    int damage = player.getAttackPower();
-                    if (player.getSelectedWeapon() != null) {
-                        damage += player.getSelectedWeapon().getAttackPower();
-                    }
+                    if (player.getSelectedWeapon() != null) { // Check for selected weapon HERE
+                        int damage = player.getAttackPower() + player.getSelectedWeapon().getAttackPower();
+                        player.attackPlanet(selectedPlanet, damage);
 
-                    player.attackPlanet(selectedPlanet, damage);
-                    if (selectedPlanet.isDestroyed()) {
-                        solarSystem.removePlanet(selectedPlanet);
-                        selectedPlanet = null;
-                        hud.setSelectedPlanet(null); 
-                    }
-                    
-                    hud.repaint(); 
-                    } else {
-                        if (e.getX() >= 5 && e.getX() <= 60 && e.getY() >= 5 && e.getY() <= 25) {
-                            hud.setShowInventory(!hud.isShowInventory());
-                            hud.repaint(); 
+                        if (selectedPlanet.isDestroyed()) {
+                            solarSystem.removePlanet(selectedPlanet);
+                            selectedPlanet = null;
+                            hud.setSelectedPlanet(null);
                         }
+                        hud.repaint();
+                    } // No 'else' needed; if no weapon is selected, nothing happens.
+                } else {
+                        
                     }
                 }
             });
@@ -99,9 +88,13 @@ public class GamePanel extends JPanel implements Runnable {
                     gameWindow.updateGameState(GameWindow.GameState.GAME);
                 }
 
-                if (e.getKeyCode() == KeyEvent.VK_I) {
+                if (e.getKeyCode() == KeyEvent.VK_I && gameWindow.getCurrentState() == GameWindow.GameState.GAME) {
                     inventory.setVisible(!inventory.isVisible());
                     repaint();
+                }
+
+                if (e.getKeyCode() == KeyEvent.VK_F) {
+                    showFPS = !showFPS;
                 }
             }
 
@@ -111,10 +104,20 @@ public class GamePanel extends JPanel implements Runnable {
             }
         });
 
-        Weapon drill = new Weapon("Drill", 1);
+        inventory = new Inventory();
+        add(inventory);
 
+        player = new Player("Conqueror", this, inventory);
+
+        Drill drill = new Drill();
         player.acquireWeapon(drill);
-        player.setSelectedWeapon(drill);
+
+        if (!player.getWeapons().isEmpty()) {
+            player.setSelectedWeapon(player.getWeapons().get(0));
+        }
+
+        inventory.updateInventory(player);
+
         hud = new Hud(this, player);
         hud.setBounds(0, 0, 700, 500);
         add(hud);
@@ -153,6 +156,7 @@ public class GamePanel extends JPanel implements Runnable {
 
         long lastTimer = System.currentTimeMillis();
         double delta = 0;
+        int frames = 0;
 
         while (running) {
             long now = System.nanoTime();
@@ -168,11 +172,14 @@ public class GamePanel extends JPanel implements Runnable {
             }
 
             if (shouldRender) {
+                frames++;
                 repaint();
             }
 
             if (System.currentTimeMillis() - lastTimer >= 1000) {
                 lastTimer += 1000;
+                fps = frames;
+                frames = 0;
             }
 
             try {
@@ -192,6 +199,12 @@ public class GamePanel extends JPanel implements Runnable {
         super.paintComponent(g);
         if (gameWindow.getCurrentState() == GameWindow.GameState.TITLE) {
             drawTitleScreen(g);
+        }
+
+        if (showFPS) { // Draw FPS only if enabled
+            g.setColor(Color.BLACK);
+            g.setFont(new Font("Arial", Font.PLAIN, 12));
+            g.drawString("FPS: " + fps, getParent().getWidth() - 80, 15); // Display FPS at top-left
         }
 
         if (gameWindow.getCurrentState() == GameWindow.GameState.GAME) {
