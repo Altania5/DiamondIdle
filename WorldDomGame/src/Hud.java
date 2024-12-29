@@ -1,5 +1,6 @@
 import javax.swing.*;
 import java.awt.*;
+import java.awt.geom.Ellipse2D;
 import java.awt.geom.RoundRectangle2D;
 import java.awt.image.BufferedImage;
 
@@ -70,6 +71,13 @@ public class Hud extends JPanel {
             g.setFont(new Font("Arial", Font.BOLD, 16));
             g.drawString("Planet: " + selectedPlanet.getName(), 20, 20);
             g.drawString("Health: " + selectedPlanet.getHealth(), 20, 40);
+
+            // Draw the hitbox on top of the planet image
+            if(gamePanel.showHitboxes) { 
+                Ellipse2D hitbox = selectedPlanet.getHitbox();
+                g2d.setColor(Color.RED);
+                g2d.draw(hitbox);
+            }
         }
     }
 }

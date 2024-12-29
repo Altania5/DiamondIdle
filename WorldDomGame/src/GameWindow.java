@@ -7,11 +7,6 @@ public class GameWindow extends JFrame {
     public static int WIDTH = 800;
     public static int HEIGHT = 600;
 
-    public enum GameState {
-        TITLE,
-        GAME
-    }
-
     public GameWindow() {
         setTitle("Galactic Conqueror");
         setSize(WIDTH, HEIGHT);

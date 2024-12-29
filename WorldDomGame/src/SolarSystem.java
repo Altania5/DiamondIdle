@@ -16,11 +16,14 @@ public class SolarSystem {
         Random random = new Random();
         ArrayList<Planet> madePlanets = new ArrayList<>();
         int numberOfPlanets = 1 + random.nextInt(10);
-
+    
         for (int i = 0; i < numberOfPlanets; i++) {
-            madePlanets.add(new Planet("Planet " + (i + 1)));
+            int x = random.nextInt(800) + 100; // Example x range
+            int y = random.nextInt(600) + 100; // Example y range
+            int radius = random.nextInt(50) + 20; // Example radius range
+            madePlanets.add(new Planet(x, y, radius, "Planet " + (i + 1)));
         }
-
+    
         return madePlanets;
     }
 

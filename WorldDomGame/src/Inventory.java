@@ -17,60 +17,111 @@ public class Inventory extends JPanel {
     private boolean visible = false;
     private int rows = 3;
     private int columns = 13;
-    private int padding = 10; 
+    private int padding = 10;
     public ItemStack[][] inventoryGrid = new ItemStack[rows][columns]; // Example: 9x4 grid
     private ItemStack selectedWeaponItemStack;
 
+    // Drag and drop
+    private ItemStack draggedItemStack = null;
+    private int dragOffsetX, dragOffsetY;
 
     public Inventory() {
         setOpaque(false);
         setFocusable(true);
+    }
 
-        addMouseListener(new MouseAdapter() {
-            @Override
-            public void mouseClicked(MouseEvent e) {
-                if (!isVisible()) return; 
-                int clickedRow = -1;
-                int clickedCol = -1;
-                int cellSide = getCellSide(); 
-                if (cellSide > 0) {  
-                    for (int row = 0; row < rows; row++) {
-                        for (int col = 0; col < columns; col++) {
-                            int cellX = padding + col * (cellSide + padding);
-                            int cellY = padding + row * (cellSide + padding);
-                            if (e.getX() >= cellX && e.getX() < cellX + cellSide && 
-                                e.getY() >= cellY && e.getY() < cellY + cellSide) {
-    
-                                clickedRow = row;
-                                clickedCol = col;
-                                break; 
-                            }
-                        }
-                        if (clickedRow != -1) break; 
+    public void handleClick(MouseEvent e) {
+        int clickedRow = -1;
+        int clickedCol = -1;
+
+        int cellSide = getCellSide();
+        if (cellSide > 0) {
+            for (int row = 0; row < rows; row++) {
+                for (int col = 0; col < columns; col++) {
+                    int cellX = padding + col * (cellSide + padding);
+                    int cellY = padding + row * (cellSide + padding);
+                    if (e.getX() >= cellX && e.getX() < cellX + cellSide &&
+                            e.getY() >= cellY && e.getY() < cellY + cellSide) {
+
+                        clickedRow = row;
+                        clickedCol = col;
+                        break;
                     }
-                } else {
-                    System.err.println("Invalid cell dimensions");
                 }
-    
-                if (clickedRow != -1 && clickedCol != -1) {
-                    ItemStack clickedItemStack = inventoryGrid[clickedRow][clickedCol];
-                    if (clickedItemStack != null && clickedItemStack.getItem() instanceof Weapon) {
-    
-                        // Deselect if the same weapon is clicked again
-                        if (selectedWeaponItemStack != null && selectedWeaponItemStack == clickedItemStack) { 
-                            selectedWeaponItemStack = null; 
-                            player.setSelectedWeapon(null);
-                        } else {
-                            selectedWeaponItemStack = clickedItemStack;
-                            Weapon selectedWeapon = (Weapon) clickedItemStack.getItem();
-                            player.setSelectedWeapon(selectedWeapon);
+                if (clickedRow != -1) break;
+            }
+        } else {
+            System.err.println("Invalid cell dimensions");
+        }
+
+        if (clickedRow != -1 && clickedCol != -1) {
+            ItemStack clickedItemStack = inventoryGrid[clickedRow][clickedCol];
+            if (clickedItemStack != null && clickedItemStack.getItem() instanceof Weapon) {
+                if (selectedWeaponItemStack != null && selectedWeaponItemStack == clickedItemStack) {
+                    selectedWeaponItemStack = null;
+                    player.setSelectedWeapon(null);
+                } else {
+                    selectedWeaponItemStack = clickedItemStack;
+                    Weapon selectedWeapon = (Weapon) clickedItemStack.getItem();
+                    player.setSelectedWeapon(selectedWeapon);
+                }
+                repaint();
+            }
+        }
+    }
+
+    public void handleMousePress(MouseEvent e) {
+        int cellSide = getCellSide();
+        if (cellSide > 0) {
+            for (int row = 0; row < rows; row++) {
+                for (int col = 0; col < columns; col++) {
+                    int cellX = padding + col * (cellSide + padding);
+                    int cellY = padding + row * (cellSide + padding);
+                    if (e.getX() >= cellX && e.getX() < cellX + cellSide &&
+                            e.getY() >= cellY && e.getY() < cellY + cellSide) {
+                        draggedItemStack = inventoryGrid[row][col];
+                        if (draggedItemStack != null) {
+                            dragOffsetX = e.getX() - cellX;
+                            dragOffsetY = e.getY() - cellY;
                         }
-                        repaint(); 
+                        return;
                     }
                 }
             }
-        });    
+        } else {
+            System.err.println("Invalid cell dimensions");
+        }
     }
+
+    public void handleMouseDrag(MouseEvent e) {
+        if (draggedItemStack != null) {
+            repaint();
+        }
+    }
+
+    public void handleMouseReleased(MouseEvent e) {
+        if (draggedItemStack != null) {
+            int cellSide = getCellSide();
+            if (cellSide > 0) {
+                int targetCol = (e.getX() - padding) / (cellSide + padding);
+                int targetRow = (e.getY() - padding) / (cellSide + padding);
+    
+                if (targetRow >= 0 && targetRow < rows && targetCol >= 0 && targetCol < columns) {
+                    // Swap the dragged item with the item in the target slot
+                    ItemStack targetItemStack = inventoryGrid[targetRow][targetCol];
+                    inventoryGrid[targetRow][targetCol] = draggedItemStack;
+                    inventoryGrid[draggedItemStack.item.hashCode() % rows][draggedItemStack.item.hashCode() % columns] = targetItemStack;
+                }
+            } else {
+                System.err.println("Invalid cell dimensions");
+            }
+    
+            draggedItemStack = null;
+            repaint();
+        }
+    }
+
+
     private int getCellSide() {
         int totalPaddingWidth = (columns + 1) * padding;
         int totalPaddingHeight = (rows + 1) * padding;
@@ -82,26 +133,28 @@ public class Inventory extends JPanel {
     }
 
     public void updateInventory(Player player) {
-       // Iterate through player's updated items/weapons and update the grid accordingly.
+        this.player = player; // Update the player instance
+        // Iterate through player's updated items/weapons and update the grid accordingly.
         inventoryGrid = new ItemStack[rows][columns]; // Clear existing grid.
         int currentRow = 0;
         int currentCol = 0;
-
         //Iterate through each weapon in players inventory.
         for (Weapon weapon : player.getWeapons()) {
-            inventoryGrid[currentRow][currentCol] = new ItemStack(weapon, 1); // Assuming one weapon per slot for now.
+            inventoryGrid[currentRow][currentCol] = new ItemStack(weapon, 1);
+            // Assuming one weapon per slot for now.
 
             currentCol++;
             if (currentCol == columns) {
                 currentCol = 0;
                 currentRow++;
-                if(currentRow == rows) {
-                    break; //Inventory is full. Stop adding more items.
+                if (currentRow == rows) {
+                    break;
+                    //Inventory is full. Stop adding more items.
                 }
             }
         }
 
-       repaint();
+        repaint();
     }
 
     public void setVisible(boolean visible) {
@@ -123,9 +176,11 @@ public class Inventory extends JPanel {
             return;
         }
         Graphics2D g2d = (Graphics2D) g;
-        g2d.setRenderingHint(RenderingHints.KEY_ANTIALIASING, RenderingHints.VALUE_ANTIALIAS_ON); // Get parent dimensions
+        g2d.setRenderingHint(RenderingHints.KEY_ANTIALIASING, RenderingHints.VALUE_ANTIALIAS_ON);
+        // Get parent dimensions
         int parentWidth = getParent().getWidth();
-        int parentHeight = getParent().getHeight(); // Inventory background panel
+        int parentHeight = getParent().getHeight();
+        // Inventory background panel
         int panelWidth = parentWidth;
         int panelHeight = parentHeight / 3;
         int x = 0;
@@ -134,16 +189,20 @@ public class Inventory extends JPanel {
         RoundRectangle2D roundedRectangle = new RoundRectangle2D.Float(x, y, panelWidth, panelHeight, arcRadius, arcRadius);
         g2d.fill(roundedRectangle);
         g2d.setColor(Color.WHITE);
-        g2d.draw(roundedRectangle); // Calculate cell dimensions and padding
+        g2d.draw(roundedRectangle);
+        // Calculate cell dimensions and padding
         int totalPaddingWidth = (columns + 1) * padding;
         int totalPaddingHeight = (rows + 1) * padding;
         int availableWidth = panelWidth - totalPaddingWidth;
-        int availableHeight = panelHeight - totalPaddingHeight; // Determine the size of the square cell
-        int cellSide = Math.min(availableWidth / columns, availableHeight / rows); // Calculate cell positions
+        int availableHeight = panelHeight - totalPaddingHeight;
+        // Determine the size of the square cell
+        int cellSide = Math.min(availableWidth / columns, availableHeight / rows);
+        // Calculate cell positions
         for (int row = 0; row < rows; row++) {
             for (int col = 0; col < columns; col++) {
                 int cellX = x + padding + col * (cellSide + padding);
-                int cellY = y + padding + row * (cellSide + padding); // Draw the square cell
+                int cellY = y + padding + row * (cellSide + padding);
+                // Draw the square cell
                 g2d.setColor(new Color(0x404040));
                 g2d.fillRect(cellX, cellY, cellSide, cellSide);
                 ItemStack itemStack = inventoryGrid[row][col]; // Use itemStack instead of just item
@@ -154,7 +213,8 @@ public class Inventory extends JPanel {
                         if (img != null) {
                             g2d.drawImage(img, cellX, cellY, cellSide, cellSide, null);
                         } else {
-                            g2d.setColor(getItemColor(item)); // Use the helper function
+                            g2d.setColor(getItemColor(item));
+                            // Use the helper function
                             Ellipse2D.Double circle = new Ellipse2D.Double(cellX, cellY, cellSide, cellSide);
                             g2d.fill(circle);
                         }
@@ -169,17 +229,17 @@ public class Inventory extends JPanel {
                             g2d.setColor(Color.WHITE);
                             g2d.setStroke(new BasicStroke(2));
                             g2d.drawRect(cellX, cellY, cellSide, cellSide);
-
                         }
-
                     }
-
                 }
-
             }
-
         }
 
+        if (draggedItemStack != null) {
+            // Draw the dragged item at the mouse position
+            g.drawImage(draggedItemStack.getItem().getImage(),
+        dragOffsetX, dragOffsetY, cellSide, cellSide, null);
+        }
     }
 
     private Color getItemColor(Item item) { // Changed parameter type to Item
@@ -201,11 +261,13 @@ public class Inventory extends JPanel {
                 default:
                     return Color.LIGHT_GRAY;
             }
-    
+
         } else if (item instanceof Weapon) {
-    
-            return Color.RED; //Example color for a weapon
+
+            return Color.RED;
+            //Example color for a weapon
         }
-        return Color.black; //Or return a default color
+        return Color.black;
+        //Or return a default color
     }
 }
