@@ -1,5 +1,5 @@
 public class ItemStack {
-    public Item item; // Now stores an Item object
+    public Item item;
     public int quantity;
 
     public ItemStack(Item item, int quantity) {
@@ -7,8 +7,15 @@ public class ItemStack {
         this.quantity = quantity;
     }
 
-    //add getter for the item.
     public Item getItem() {
         return this.item;
+    }
+
+    public int getQuantity() {
+        return quantity;
+    }
+
+    public void setQuantity(int quantity) {
+        this.quantity = quantity;
     }
 }

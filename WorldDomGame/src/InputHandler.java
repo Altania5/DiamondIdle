@@ -1,3 +1,4 @@
+import java.awt.Rectangle;
 import java.awt.event.*;
 
 public class InputHandler implements KeyListener, MouseListener, MouseMotionListener {
@@ -26,13 +27,12 @@ public class InputHandler implements KeyListener, MouseListener, MouseMotionList
     @Override
     public void keyPressed(KeyEvent e) {
         if (e.getKeyCode() == KeyEvent.VK_I) {
-            gamePanel.getInventory().setVisible(!gamePanel.getInventory().isVisible());
-            gamePanel.repaint();
+            gamePanel.toggleInventoryVisibility();
         }
 
         if (window.getCurrentState() == GameState.TITLE && e.getKeyCode() == KeyEvent.VK_ENTER) {
             window.setCurrentState(GameState.GAME);
-            gamePanel.startGame(); // You might need to create this method in GamePanel
+            gamePanel.startGame();
         } 
 
         if (e.getKeyCode() == KeyEvent.VK_F) {
@@ -41,8 +41,7 @@ public class InputHandler implements KeyListener, MouseListener, MouseMotionList
         }
 
         if (e.getKeyCode() == KeyEvent.VK_H) {
-            gamePanel.showHitboxes = !gamePanel.showHitboxes;
-            gamePanel.repaint();
+            gamePanel.toggleHitboxes();
         }
     }
 
@@ -58,7 +57,28 @@ public class InputHandler implements KeyListener, MouseListener, MouseMotionList
 
     @Override
     public void mousePressed(MouseEvent e) {
-        gamePanel.handleMousePressed(e);
+        if (inventory.isVisible()) {
+            // Iterate through the slots and check if the mouse press is within any slot
+            for (int row = 0; row < inventory.rows; row++) {
+                for (int col = 0; col < inventory.columns; col++) {
+                    InventorySlot slot = inventory.inventorySlots[row][col];
+                    if (isWithinSlot(e, slot)) {
+                        slot.handleMousePress(e);
+                        // If the item is being dragged, store the original row and column
+                        if (inventory.draggedItemStack != null) {
+                            inventory.draggedItemStackRow = row;
+                            inventory.draggedItemStackCol = col;
+                        }
+                        return; // Exit after handling the press in the relevant slot
+                    }
+                }
+            }
+        }
+    }
+
+    private boolean isWithinSlot(MouseEvent e, InventorySlot slot) {
+        Rectangle bounds = slot.getBounds();
+        return bounds.contains(e.getPoint());
     }
 
     @Override

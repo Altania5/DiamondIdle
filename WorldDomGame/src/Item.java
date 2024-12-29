@@ -1,4 +1,3 @@
-
 import javax.imageio.ImageIO;
 import java.awt.image.BufferedImage;
 import java.io.File;
@@ -20,12 +19,8 @@ public class Item {
 
 
     private void loadImage() {
-        try (InputStream is = getClass().getClassLoader().getResourceAsStream(imagePath)) {
-            if (is != null) {
-                this.image = ImageIO.read(is);
-            } else {
-                System.err.println("Image not found: " + imagePath);
-            }
+        try {
+            this.image = ImageIO.read(new File(imagePath));
         } catch (IOException e) {
             System.err.println("Error loading image: " + e.getMessage());
         }

@@ -162,12 +162,12 @@ public class Planet {
         }
     }
 
-    private ResourceType getRandomResourceType(Random random) {
+    public static ResourceType getRandomResourceType(Random random) {
         int totalRarity = 0;
         for (ResourceType type : ResourceType.values()) {
             totalRarity += type.getRarity();
         }
-    
+
         int randomValue = random.nextInt(totalRarity) + 1;
         int currentRarity = 0;
         for (ResourceType type : ResourceType.values()) {
@@ -176,6 +176,7 @@ public class Planet {
                 return type;
             }
         }
-        return ResourceType.STONE;
+
+        return ResourceType.STONE; // Default return value (should ideally never reach here)
     }
 }

@@ -1,10 +1,10 @@
 public enum ResourceType {
-    ORE(2),
-    GAS(3),
-    CRYSTAL(2),
-    ENERGY(3),
-    GEM(1),
-    STONE(6);
+    ORE(3),  // Example rarity values
+    GAS(7),
+    CRYSTAL(15),
+    ENERGY(20),
+    GEM(25),
+    STONE(30);
 
     private final int rarity;
 

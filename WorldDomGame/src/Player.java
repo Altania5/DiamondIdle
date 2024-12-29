@@ -9,14 +9,14 @@ public class Player {
     private int attackPower;
     private ArrayList<Weapon> weapons;
     private Weapon selectedWeapon;
-    private Map<ResourceType, Integer> resources;
+    private ArrayList<Resource> resources;
     private Map<ResourceType, Integer> rareResources = new HashMap<>();
 
     public Player(String name, GamePanel gamePanel, Inventory inventory) {
         this.name = name;
         this.currentObjective = new Objective("Gain enough resources to build the Space Station.");
         this.attackPower = 0;
-        this.resources = new HashMap<>();
+        this.resources = new ArrayList<>();
         this.rareResources = new HashMap<>();
         this.weapons = new ArrayList<>();
         this.selectedWeapon = null;
@@ -39,10 +39,6 @@ public class Player {
         return attackPower;
     }
 
-    public Map<ResourceType, Integer> getResources() {
-        return resources;
-    }
-
     public ArrayList<Weapon> getWeapons() {
         return weapons;
     }
@@ -61,40 +57,51 @@ public class Player {
     }
 
     public void gainResources(ResourceType resourceType, int amount) {
-        ItemStack[][] inventoryGrid = inventory.getInventoryGrid();
-    
-        for (int row = 0; row < inventoryGrid.length; row++) {
-            for (int col = 0; col < inventoryGrid[row].length; col++) {
-                if (inventoryGrid[row][col] != null && inventoryGrid[row][col].getItem() instanceof Resource && ((Resource) inventoryGrid[row][col].getItem()).getResourceType() == resourceType) {
-                    int spaceAvailable = 999 - inventoryGrid[row][col].quantity;
-                    int amountToAdd = Math.min(amount, spaceAvailable);
-                    inventoryGrid[row][col].quantity += amountToAdd;
-                    amount -= amountToAdd;
+        InventorySlot[][] inventorySlots = inventory.inventorySlots;
+
+        // Attempt to add to existing stacks
+        for (int row = 0; row < inventorySlots.length; row++) {
+            for (int col = 0; col < inventorySlots[row].length; col++) {
+                ItemStack currentItemStack = inventorySlots[row][col].getItemStack();
+                if (currentItemStack != null && currentItemStack.getItem() instanceof Resource) {
+                    Resource resource = (Resource) currentItemStack.getItem();
+                    if (resource.getResourceType() == resourceType) {
+                        int spaceAvailable = 999 - currentItemStack.getQuantity();
+                        int amountToAdd = Math.min(amount, spaceAvailable);
+                        currentItemStack.setQuantity(currentItemStack.getQuantity() + amountToAdd);
+                        amount -= amountToAdd;
+
+                        // Repaint the slot
+                        inventorySlots[row][col].repaint();
+
+                        if (amount == 0) {
+                            return; // All resources added
+                        }
+                    }
+                }
+            }
+        }
+
+        // If we get here, no existing stack or all stacks are full, find an empty slot
+        for (int row = 0; row < inventorySlots.length; row++) {
+            for (int col = 0; col < inventorySlots[row].length; col++) {
+                if (inventorySlots[row][col].getItemStack() == null) {
+                    Resource resource = new Resource("Resource", "", resourceType); // Create new Resource object
+                    ItemStack newItemStack = new ItemStack(resource, Math.min(amount, 999));
+                    inventorySlots[row][col].setItemStack(newItemStack);
+                    amount -= newItemStack.getQuantity();
+
+                    // Repaint the slot
+                    inventorySlots[row][col].repaint();
+
                     if (amount == 0) {
-                        inventory.repaint(); // Repaint when changes occur.
                         return; // All resources added
                     }
                 }
             }
         }
-    
-        // If we get here, no existing stack or all stacks are full
-        for (int row = 0; row < inventoryGrid.length; row++) {
-            for (int col = 0; col < inventoryGrid[row].length; col++) {
-                if (inventoryGrid[row][col] == null) {
-                    Resource resource = new Resource(resourceType); // Create Resource object
-                    inventoryGrid[row][col] = new ItemStack(resource, Math.min(amount, 999)); // Use resource in ItemStack constructor
-                    amount -= Math.min(amount, 999);
-                    if (amount == 0) {
-                        inventory.repaint(); // Repaint when changes occur.
-                        return;
-                    }
-                }
-            }
-        }
-            inventory.updateInventory(this); //Call repaint inside updateInventory().
     }
-
+    
     public Inventory getInventory() {
         return inventory;
     }
@@ -102,15 +109,6 @@ public class Player {
     public void gainRareResources(ResourceType resourceType, int amount) {
         rareResources.put(resourceType, rareResources.getOrDefault(resourceType, 0) + amount);
         System.out.println(name + " gained " + amount + " rare " + resourceType.name() + ".");
-    }
-
-    public void spendResources(ResourceType resourceType, int amount) {
-        if (resources.getOrDefault(resourceType, 0) >= amount) {
-            resources.put(resourceType, resources.get(resourceType) - amount);
-            System.out.println(name + " spent " + amount + " " + resourceType.name() + ".");
-        } else {
-            System.out.println(name + " does not have enough " + resourceType.name() + ".");
-        }
     }
 
     public void spendRareResources(ResourceType resourceType, int amount) {
@@ -135,5 +133,14 @@ public class Player {
         } else {
             System.out.println(name + " does not have that weapon.");
         }
+    }
+
+    public ArrayList<Resource> getResources() {
+        return resources;
+    }
+
+    public void acquireResource(Resource resource) {
+        resources.add(resource);
+        inventory.updateInventory(this); // Notify the inventory to update
     }
 }

@@ -23,23 +23,27 @@ public class GamePanel extends JPanel implements Runnable {
     public boolean showFPS = true;
     private int fps = 0;
     public boolean showHitboxes = false;
+    public boolean inventoryVisible = false;
 
     public GamePanel(GameWindow gameWindow) {
         this.gameWindow = gameWindow;
-        inputHandler = new InputHandler(this, gameWindow);
         setFocusable(true);
         requestFocus();
 
         inventory = new Inventory();
-        add(inventory);
+        inventory.initializeSlots();
 
-        player = new Player("Conqueror", this, inventory);
+        player = new Player("Altanin", this, inventory);
+        inputHandler = new InputHandler(this, gameWindow);
 
         Drill drill = new Drill();
         player.acquireWeapon(drill);
         player.setSelectedWeapon(drill);
 
         inventory.updateInventory(player);
+
+        add(inventory);
+        inventory.setBounds(0, 300, 600, 200);
 
         hud = new Hud(this, player);
         hud.setBounds(0, 0, 700, 500);
@@ -63,10 +67,6 @@ public class GamePanel extends JPanel implements Runnable {
     }
 
     public void handleMouseClicked(MouseEvent e) {
-        if (inventory.isVisible() && inventory.getMousePosition() != null) {
-            inventory.handleClick(e);
-            return;
-        }
 
         Planet clickedPlanet = null; 
         for (Planet planet : solarSystem.getPlanets()) {
@@ -77,8 +77,8 @@ public class GamePanel extends JPanel implements Runnable {
         }
 
         if (clickedPlanet != null) {
-        selectedPlanet = clickedPlanet;
-        hud.setSelectedPlanet(selectedPlanet);
+            selectedPlanet = clickedPlanet;
+            hud.setSelectedPlanet(selectedPlanet);
         } else {
             selectedPlanet = null;
             hud.setSelectedPlanet(null);
@@ -104,22 +104,16 @@ public class GamePanel extends JPanel implements Runnable {
             }
         }
     }
-
-    public void handleMousePressed(MouseEvent e) {
-        if (inventory.isVisible() && inventory.getMousePosition() != null) {
-            inventory.handleMousePress(e);
-        }
-    }
     
     public void handleMouseReleased(MouseEvent e) {
-        if (inventory.isVisible() && inventory.getMousePosition() != null) {
+        if (inventory.isVisible()) {
             inventory.handleMouseReleased(e);
         }
     }
     
     public void handleMouseDragged(MouseEvent e) {
-        if (inventory.isVisible() && inventory.getMousePosition() != null) {
-            inventory.handleMouseDrag(e);
+        if (inventory.isVisible()) {
+            inventory.handleMouseDragged(e);
         }
     }
 
@@ -180,8 +174,19 @@ public class GamePanel extends JPanel implements Runnable {
         }
     }
 
+    public void toggleHitboxes() {
+        showHitboxes = !showHitboxes;
+        repaint();
+    }
+
+    public void toggleInventoryVisibility() {
+        inventoryVisible = !inventoryVisible;
+        inventory.setVisible(inventoryVisible);
+        repaint();
+    }
+
     private void updateGame() {
-        
+
     }
 
     @Override
@@ -218,9 +223,14 @@ public class GamePanel extends JPanel implements Runnable {
         }
     }
 
-        if (inventory.isVisible()) {
-            inventory.paintComponent(g);
+    if (inventoryVisible) {
+        inventory.drawInventory(g, getWidth(), getHeight());
+        if (showHitboxes) {
+            inventory.toggleHitboxes(true);
+        } else {
+            inventory.toggleHitboxes(false);
         }
+    }
     }
 
     private void drawTitleScreen(Graphics g) {
